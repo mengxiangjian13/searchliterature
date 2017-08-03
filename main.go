@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 	"strings"
 )
 
@@ -22,6 +23,7 @@ func main() {
 	if e == nil {
 		content := string(f)
 		literatureList := strings.Split(content, "\n")
+		literatureNames := []string{}
 		count := len(literatureList)
 		for i := 0; i < count; i++ {
 			literature := literatureList[i]
@@ -32,13 +34,58 @@ func main() {
 					nameSplit := strings.Split(nameString, ".")
 					if len(nameSplit) > 0 {
 						name := nameSplit[0]
-						fmt.Print(name)
-						fmt.Print("\n")
+						literatureNames = append(literatureNames, name)
 					}
 				}
+			}
+		}
+
+		if len(literatureNames) > 0 {
+			fmt.Print(literatureNames)
+		}
+
+		pwd := "/Users/mengxiangjian/Desktop/Go/src/github.com/mengxiangjian13/searchliterature/"
+		literatureFiles := []string{}
+		walkFn := func(path string, info os.FileInfo, err error) error {
+			if !info.IsDir() {
+				literatureFiles = append(literatureFiles, path)
+			}
+			return nil
+		}
+		filepath.Walk(pwd, walkFn)
+		for i := 0; i < len(literatureNames); i++ {
+			name := literatureNames[i]
+			localFile := pathForLocalLiterature(literatureFiles, name)
+			if len(localFile) > 0 {
+				fmt.Print(localFile + "\n")
 			}
 		}
 	} else {
 		fmt.Print(e)
 	}
+}
+
+func pathForLocalLiterature(literatureFiles []string, literatureName string) string {
+	length := 0
+	result := ""
+	for i := 0; i < len(literatureFiles); i++ {
+		literaturePath := literatureFiles[i]
+		_, file := filepath.Split(literaturePath)
+		name := trimFileExtension(file)
+		if strings.HasPrefix(literatureName, name) && len(name) > length {
+			length = len(name)
+			result = literaturePath
+		}
+	}
+	return result
+}
+
+func trimFileExtension(file string) string {
+	if strings.HasPrefix(file, ".") {
+		// 如果是.开头的文件返回文件名
+		return file
+	}
+	ex := filepath.Ext(file)
+	name := file[0 : len(file)-len(ex)]
+	return name
 }
